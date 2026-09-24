@@ -1,0 +1,19 @@
+{
+  "name": "Neon Streets",
+  "short_name": "Dubzilla",
+  "description": "Side-scrolling brawler. Dubzilla holds the neon strip.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#05040a",
+  "theme_color": "#120c1c",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
