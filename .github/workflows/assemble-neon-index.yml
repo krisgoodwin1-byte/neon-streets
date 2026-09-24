@@ -1,0 +1,51 @@
+name: Assemble Neon Streets index
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/assemble-neon-index.yml"
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch loader parts and build index.html
+        run: |
+          set -euo pipefail
+          mkdir -p assets/_src/neon-index
+          BASE="https://raw.githubusercontent.com/Kri5pydubz/kri5pydubz.github.io/main/assets/_src/neon-play"
+          for i in 00 01 02 03 04 05; do
+            curl -fsSL "$BASE/part-$i.txt" -o "assets/_src/neon-index/part-$i.txt"
+          done
+          curl -fsSL "$BASE/part-06.hex" -o assets/_src/neon-index/part-06.hex
+          python3 << 'PY'
+          from pathlib import Path
+          root = Path("assets/_src/neon-index")
+          hx = root / "part-06.hex"
+          (root / "part-06.txt").write_bytes(bytes.fromhex(hx.read_text().strip()))
+          chunks = [(root / f"part-{i:02d}.txt").read_bytes() for i in range(7)]
+          out = Path("index.html")
+          out.write_bytes(b"".join(chunks))
+          n = out.stat().st_size
+          print("assembled", n)
+          assert n == 22273, n
+          text = out.read_text(encoding="utf-8", errors="replace")
+          assert text.lstrip().startswith("<!DOCTYPE html"), text[:40]
+          assert "Neon Streets" in text
+          assert "@file://" not in text
+          PY
+          wc -c index.html
+      - name: Commit index.html
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Publish playable Neon Streets build"
+          git push
